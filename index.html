@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bee Race - Chọn Ong Về Đích</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="sky-glow glow-1"></div>
+  <div class="sky-glow glow-2"></div>
+
+  <header class="topbar">
+    <div class="brand">🐝 BEE RACE</div>
+    <div class="title-group">
+      <h1>Chọn ong về đích</h1>
+      <p>Nhập tên 4 chú ong, bấm bắt đầu, và đoán ong nào sẽ thắng sát nút.</p>
+    </div>
+    <div class="controls desktop-controls">
+      <button id="startBtn" class="btn btn-primary">Bắt đầu</button>
+      <button id="resetBtn" class="btn btn-secondary">Reset</button>
+      <button id="fullscreenBtn" class="btn btn-tertiary">Toàn màn hình</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="panel setup-panel">
+      <div class="panel-title">Tên các chú ong</div>
+      <div class="inputs">
+        <label class="bee-input bee-1">
+          <span>Ong 1</span>
+          <input id="name1" maxlength="22" value="Nguyễn A" />
+        </label>
+        <label class="bee-input bee-2">
+          <span>Ong 2</span>
+          <input id="name2" maxlength="22" value="Trần B" />
+        </label>
+        <label class="bee-input bee-3">
+          <span>Ong 3</span>
+          <input id="name3" maxlength="22" value="Lê C" />
+        </label>
+        <label class="bee-input bee-4">
+          <span>Ong 4</span>
+          <input id="name4" maxlength="22" value="Phạm D" />
+        </label>
+      </div>
+      <div class="mobile-controls controls">
+        <button id="startBtnMobile" class="btn btn-primary">Bắt đầu</button>
+        <button id="resetBtnMobile" class="btn btn-secondary">Reset</button>
+        <button id="fullscreenBtnMobile" class="btn btn-tertiary">Toàn màn hình</button>
+      </div>
+      <div class="tips">
+        <div>• Random 1 ong thắng</div>
+        <div>• Tất cả ong đều về đích</div>
+        <div>• Kết quả thắng sít sao để tăng kịch tính</div>
+      </div>
+    </aside>
+
+    <section class="race-card">
+      <div class="race-header">
+        <div class="winner-box" id="winnerBox">Winner: ?</div>
+        <div class="countdown" id="countdownBox">Sẵn sàng?</div>
+      </div>
+
+      <div id="raceTrack" class="race-track">
+        <div class="track-sun"></div>
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="hills hill-left"></div>
+        <div class="hills hill-right"></div>
+        <div class="finish-zone">
+          <div class="finish-label">ĐÍCH</div>
+          <div class="flag flag-left"></div>
+          <div class="flag flag-right"></div>
+        </div>
+
+        <div class="lane lane-1" data-index="0">
+          <div class="lane-line"></div>
+          <div class="bee bee-1" id="bee0">
+            <div class="bee-name" id="label0">Nguyễn A</div>
+            <div class="bee-body">
+              <div class="wing wing-left"></div>
+              <div class="wing wing-right"></div>
+              <div class="body-core"></div>
+              <div class="eye eye-1"></div>
+              <div class="eye eye-2"></div>
+              <div class="stinger"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lane lane-2" data-index="1">
+          <div class="lane-line"></div>
+          <div class="bee bee-2" id="bee1">
+            <div class="bee-name" id="label1">Trần B</div>
+            <div class="bee-body">
+              <div class="wing wing-left"></div>
+              <div class="wing wing-right"></div>
+              <div class="body-core"></div>
+              <div class="eye eye-1"></div>
+              <div class="eye eye-2"></div>
+              <div class="stinger"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lane lane-3" data-index="2">
+          <div class="lane-line"></div>
+          <div class="bee bee-3" id="bee2">
+            <div class="bee-name" id="label2">Lê C</div>
+            <div class="bee-body">
+              <div class="wing wing-left"></div>
+              <div class="wing wing-right"></div>
+              <div class="body-core"></div>
+              <div class="eye eye-1"></div>
+              <div class="eye eye-2"></div>
+              <div class="stinger"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lane lane-4" data-index="3">
+          <div class="lane-line"></div>
+          <div class="bee bee-4" id="bee3">
+            <div class="bee-name" id="label3">Phạm D</div>
+            <div class="bee-body">
+              <div class="wing wing-left"></div>
+              <div class="wing wing-right"></div>
+              <div class="body-core"></div>
+              <div class="eye eye-1"></div>
+              <div class="eye eye-2"></div>
+              <div class="stinger"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ground"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="winner-modal" id="winnerModal" aria-hidden="true">
+    <div class="winner-content">
+      <div class="winner-emoji">🏁🐝</div>
+      <div class="winner-title">Người chiến thắng</div>
+      <div class="winner-name" id="winnerModalName">?</div>
+      <button id="closeWinnerBtn" class="btn btn-primary">Chơi lại</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
