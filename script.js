@@ -12,12 +12,112 @@ const winnerNoteEl = document.getElementById("winnerNote");
 const countdownBox = document.getElementById("countdownBox");
 const leaderBox = document.getElementById("leaderBox");
 const rankItems = Array.from(document.querySelectorAll(".rank-item"));
+const beeSprite = new Image();
+let beeSpriteReady = false;
+
+beeSprite.decoding = "async";
+beeSprite.addEventListener("load", () => {
+  beeSpriteReady = true;
+  render();
+});
+beeSprite.src = "bee-cute.png";
 
 const palettes = [
   { accent: "#ff5e86", accentDark: "#e63d77", ribbon: "#ffc4d6", glow: "rgba(255, 94, 134, 0.28)" },
   { accent: "#31c6ef", accentDark: "#1898d4", ribbon: "#b5eeff", glow: "rgba(49, 198, 239, 0.28)" },
   { accent: "#ffbf36", accentDark: "#f09d00", ribbon: "#ffe6a1", glow: "rgba(255, 191, 54, 0.28)" },
   { accent: "#9977ff", accentDark: "#6d4bf0", ribbon: "#dacfff", glow: "rgba(153, 119, 255, 0.28)" },
+];
+
+const beeArchetypes = [
+  {
+    key: "rocket",
+    label: "Bứt đầu",
+    baseSpeed: 0.107,
+    chaseBias: 0.007,
+    passDesire: 0.006,
+    finishKick: 0.009,
+    fatigue: 0.017,
+    breakawayDrag: 0.012,
+    openingKick: 0.019,
+    pulseRate: 1.86,
+    rhythmAmp: 0.0046,
+    slingBurst: 0.005,
+    draftSkill: 0.002,
+    earlyBias: 0.019,
+    midBias: -0.003,
+    lateBias: -0.011,
+    chaosAmp: 0.0015,
+    chaosRate: 2.2,
+    finishKickPoint: 0.76,
+    finishKickWidth: 0.11,
+  },
+  {
+    key: "stalker",
+    label: "Núp gió",
+    baseSpeed: 0.103,
+    chaseBias: 0.018,
+    passDesire: 0.012,
+    finishKick: 0.016,
+    fatigue: 0.008,
+    breakawayDrag: 0.006,
+    openingKick: 0.006,
+    pulseRate: 1.56,
+    rhythmAmp: 0.0035,
+    slingBurst: 0.01,
+    draftSkill: 0.009,
+    earlyBias: -0.001,
+    midBias: 0.006,
+    lateBias: 0.006,
+    chaosAmp: 0.002,
+    chaosRate: 2.6,
+    finishKickPoint: 0.8,
+    finishKickWidth: 0.12,
+  },
+  {
+    key: "closer",
+    label: "Nước rút cuối",
+    baseSpeed: 0.1,
+    chaseBias: 0.014,
+    passDesire: 0.014,
+    finishKick: 0.03,
+    fatigue: 0.006,
+    breakawayDrag: 0.004,
+    openingKick: 0.002,
+    pulseRate: 1.48,
+    rhythmAmp: 0.0032,
+    slingBurst: 0.013,
+    draftSkill: 0.008,
+    earlyBias: -0.01,
+    midBias: 0.001,
+    lateBias: 0.023,
+    chaosAmp: 0.0015,
+    chaosRate: 2.1,
+    finishKickPoint: 0.86,
+    finishKickWidth: 0.1,
+  },
+  {
+    key: "roller",
+    label: "Leo dần",
+    baseSpeed: 0.102,
+    chaseBias: 0.011,
+    passDesire: 0.01,
+    finishKick: 0.019,
+    fatigue: 0.01,
+    breakawayDrag: 0.005,
+    openingKick: 0.008,
+    pulseRate: 1.72,
+    rhythmAmp: 0.0058,
+    slingBurst: 0.009,
+    draftSkill: 0.005,
+    earlyBias: 0.002,
+    midBias: 0.013,
+    lateBias: 0.008,
+    chaosAmp: 0.004,
+    chaosRate: 3.2,
+    finishKickPoint: 0.81,
+    finishKickWidth: 0.13,
+  },
 ];
 
 const state = {
@@ -30,8 +130,9 @@ const state = {
   raceElapsed: 0,
   countdownRemaining: 0,
   finishOrder: [],
-  winnerIndex: null,
   leaderIndex: null,
+  whistleTriggered: false,
+  whistleTime: 0,
 };
 
 function clamp(value, min = 0, max = 1) {
@@ -51,6 +152,15 @@ function smootherStep(t) {
 function gaussian(t, center, width) {
   const scaled = (t - center) / Math.max(0.001, width);
   return Math.exp(-scaled * scaled * 0.5);
+}
+
+function shuffled(array) {
+  const next = [...array];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+  return next;
 }
 
 function roundRectPath(x, y, width, height, radius) {
@@ -92,7 +202,7 @@ function createBee(index) {
     index,
     palette,
     name: sanitizeName(nameInputs[index].value, index),
-    size: 44 + (index % 2),
+    size: 38 + (index % 2),
     progress: 0,
     displayProgress: 0,
     x: 0,
@@ -101,7 +211,27 @@ function createBee(index) {
     finished: false,
     finishRank: null,
     finishTime: null,
-    finishDuration: 0,
+    archetypeKey: "",
+    archetypeLabel: "",
+    speed: 0,
+    baseSpeed: 0,
+    chaseBias: 0,
+    passDesire: 0,
+    finishKick: 0,
+    finishKickPoint: 0,
+    finishKickWidth: 0,
+    fatigue: 0,
+    breakawayDrag: 0,
+    openingKick: 0,
+    pulseRate: 0,
+    rhythmAmp: 0,
+    slingBurst: 0,
+    draftSkill: 0,
+    earlyBias: 0,
+    midBias: 0,
+    lateBias: 0,
+    chaosAmp: 0,
+    chaosRate: 0,
     pathSeed: Math.random() * Math.PI * 2,
     wingSeed: Math.random() * Math.PI * 2,
     driftFreq: 2 + Math.random() * 0.65,
@@ -110,7 +240,6 @@ function createBee(index) {
     driftAmpY: 12 + Math.random() * 5,
     progressAmp: 0.012 + Math.random() * 0.01,
     progressWave: 2.4 + Math.random() * 0.8,
-    paceSurges: [],
   };
 }
 
@@ -199,39 +328,91 @@ function revealRank(bee) {
       : `Cán đích ở vị trí #${bee.finishRank} sau ${bee.finishTime.toFixed(2)} giây.`;
 }
 
-function buildPaceSurges(orderIndex) {
-  const earlyAmp = -0.012 + Math.random() * 0.028;
-  const middleAmp = -0.01 + Math.random() * 0.032;
+function configureBeeRaceTraits(bee, archetype) {
+  const spice = 0.0025;
+  bee.speed = 0;
+  bee.archetypeKey = archetype.key;
+  bee.archetypeLabel = archetype.label;
+  bee.baseSpeed = archetype.baseSpeed + (Math.random() - 0.5) * spice;
+  bee.chaseBias = archetype.chaseBias + Math.random() * 0.003;
+  bee.passDesire = archetype.passDesire + Math.random() * 0.003;
+  bee.finishKick = archetype.finishKick + Math.random() * 0.005;
+  bee.finishKickPoint = archetype.finishKickPoint + (Math.random() - 0.5) * 0.05;
+  bee.finishKickWidth = archetype.finishKickWidth + (Math.random() - 0.5) * 0.03;
+  bee.fatigue = archetype.fatigue + Math.random() * 0.003;
+  bee.breakawayDrag = archetype.breakawayDrag + Math.random() * 0.0025;
+  bee.openingKick = archetype.openingKick + Math.random() * 0.003;
+  bee.pulseRate = archetype.pulseRate + (Math.random() - 0.5) * 0.2;
+  bee.rhythmAmp = archetype.rhythmAmp + Math.random() * 0.0012;
+  bee.slingBurst = archetype.slingBurst + Math.random() * 0.003;
+  bee.draftSkill = archetype.draftSkill + Math.random() * 0.002;
+  bee.earlyBias = archetype.earlyBias + (Math.random() - 0.5) * 0.003;
+  bee.midBias = archetype.midBias + (Math.random() - 0.5) * 0.003;
+  bee.lateBias = archetype.lateBias + (Math.random() - 0.5) * 0.003;
+  bee.chaosAmp = archetype.chaosAmp + Math.random() * 0.0015;
+  bee.chaosRate = archetype.chaosRate + (Math.random() - 0.5) * 0.35;
+}
 
-  if (orderIndex === 0) {
-    return [
-      { center: 0.22 + Math.random() * 0.06, width: 0.08, amp: earlyAmp },
-      { center: 0.54 + Math.random() * 0.05, width: 0.1, amp: middleAmp },
-      { center: 0.84 + Math.random() * 0.03, width: 0.05, amp: 0.028 + Math.random() * 0.016 },
-    ];
+function getRaceScriptSummary(bees) {
+  const labels = bees.map((bee) => bee.archetypeLabel.toLowerCase());
+  return `${labels[0]}, ${labels[1]}, ${labels[2]}, ${labels[3]}`;
+}
+
+function getActiveRaceBees() {
+  return state.bees.filter((bee) => !bee.finished).sort((a, b) => {
+    if (b.progress !== a.progress) {
+      return b.progress - a.progress;
+    }
+    return b.speed - a.speed;
+  });
+}
+
+function triggerFinalWhistle(activeBees) {
+  if (state.whistleTriggered) {
+    return;
   }
 
-  if (orderIndex === 1) {
-    return [
-      { center: 0.2 + Math.random() * 0.08, width: 0.08, amp: 0.012 + Math.random() * 0.016 },
-      { center: 0.49 + Math.random() * 0.08, width: 0.09, amp: 0.014 + Math.random() * 0.012 },
-      { center: 0.83 + Math.random() * 0.04, width: 0.05, amp: -0.014 - Math.random() * 0.012 },
-    ];
+  state.whistleTriggered = true;
+  state.whistleTime = state.raceElapsed;
+  setStatusText("Cú huýt cuối!");
+
+  const frontPack = activeBees
+    .slice(0, 2)
+    .map((bee) => bee.name)
+    .join(" và ");
+  setLeaderText(frontPack ? `${frontPack} đang rướn` : "Cả đàn đang rướn");
+}
+
+function updateRaceStoryText(activeBees) {
+  const leader = activeBees[0];
+  const runnerUp = activeBees[1];
+
+  if (!leader) {
+    return;
   }
 
-  if (orderIndex === 2) {
-    return [
-      { center: 0.24 + Math.random() * 0.06, width: 0.08, amp: 0.008 + Math.random() * 0.01 },
-      { center: 0.58 + Math.random() * 0.06, width: 0.09, amp: -0.008 + Math.random() * 0.01 },
-      { center: 0.8 + Math.random() * 0.05, width: 0.06, amp: -0.015 - Math.random() * 0.01 },
-    ];
+  if (state.whistleTriggered) {
+    return;
   }
 
-  return [
-    { center: 0.18 + Math.random() * 0.06, width: 0.09, amp: -0.005 + Math.random() * 0.01 },
-    { center: 0.44 + Math.random() * 0.08, width: 0.1, amp: -0.01 - Math.random() * 0.01 },
-    { center: 0.74 + Math.random() * 0.07, width: 0.07, amp: -0.014 - Math.random() * 0.01 },
-  ];
+  const gap = runnerUp ? Math.max(0, leader.progress - runnerUp.progress) : 0;
+
+  if (leader.progress < 0.18) {
+    setStatusText(`${leader.name} đang bứt mở tốc`);
+    return;
+  }
+
+  if (gap < 0.018) {
+    setStatusText("Nhóm đầu đang ép sát");
+    return;
+  }
+
+  if (leader.progress < 0.56) {
+    setStatusText(`${leader.name} tạm dẫn nhưng bị bám gắt`);
+    return;
+  }
+
+  setStatusText("Đường đua đang đảo nhịp");
 }
 
 function configureRace() {
@@ -240,24 +421,12 @@ function configureRace() {
   state.countdownRemaining = 3.1;
   state.finishOrder = [];
   state.mode = "countdown";
-  state.winnerIndex = Math.floor(Math.random() * state.bees.length);
   state.leaderIndex = null;
+  state.whistleTriggered = false;
+  state.whistleTime = 0;
+  const raceProfiles = shuffled(beeArchetypes);
 
-  const others = state.bees.map((bee) => bee.index).filter((index) => index !== state.winnerIndex);
-  const runnerUpIndex = others.splice(Math.floor(Math.random() * others.length), 1)[0];
-  const thirdIndex = others.splice(Math.floor(Math.random() * others.length), 1)[0];
-  const fourthIndex = others[0];
-  const plannedOrder = [state.winnerIndex, runnerUpIndex, thirdIndex, fourthIndex];
-
-  const baseDuration = 8 + Math.random() * 0.45;
-  const offsets = [
-    0,
-    0.08 + Math.random() * 0.14,
-    0.42 + Math.random() * 0.28,
-    0.78 + Math.random() * 0.28,
-  ];
-
-  state.bees.forEach((bee) => {
+  state.bees.forEach((bee, index) => {
     bee.progress = 0;
     bee.displayProgress = 0;
     bee.x = 0;
@@ -268,16 +437,11 @@ function configureRace() {
     bee.finishTime = null;
     bee.pathSeed = Math.random() * Math.PI * 2;
     bee.wingSeed = Math.random() * Math.PI * 2;
-  });
-
-  plannedOrder.forEach((beeIndex, orderIndex) => {
-    const bee = state.bees[beeIndex];
-    bee.finishDuration = baseDuration + offsets[orderIndex];
-    bee.paceSurges = buildPaceSurges(orderIndex);
+    configureBeeRaceTraits(bee, raceProfiles[index]);
   });
 
   setStatusText("Chuẩn bị xuất phát");
-  setLeaderText("4 chú ong đang vào vị trí");
+  setLeaderText(getRaceScriptSummary(state.bees));
   refreshWinnerCard();
   resetRankingBoard();
 }
@@ -296,10 +460,11 @@ function startRace() {
 function resetRace() {
   state.mode = "idle";
   state.finishOrder = [];
-  state.winnerIndex = null;
   state.leaderIndex = null;
   state.countdownRemaining = 0;
   state.raceElapsed = 0;
+  state.whistleTriggered = false;
+  state.whistleTime = 0;
 
   state.bees.forEach((bee) => {
     bee.progress = 0;
@@ -307,10 +472,12 @@ function resetRace() {
     bee.x = 0;
     bee.y = 0;
     bee.tilt = 0;
+    bee.speed = 0;
+    bee.archetypeKey = "";
+    bee.archetypeLabel = "";
     bee.finished = false;
     bee.finishRank = null;
     bee.finishTime = null;
-    bee.paceSurges = [];
   });
 
   startBtn.disabled = false;
@@ -351,41 +518,66 @@ function registerFinish(bee) {
   }
 }
 
-function getPlannedProgress(bee) {
-  const t = clamp(state.raceElapsed / bee.finishDuration);
-  let progress =
-    0.18 * smoothstep(clamp(t / 0.22)) +
-    0.56 * smootherStep(clamp((t - 0.08) / 0.6)) +
-    0.26 * smootherStep(clamp((t - 0.64) / 0.32));
+function getDynamicSpeed(bee, activeBees) {
+  const rank = activeBees.findIndex((candidate) => candidate.index === bee.index);
+  const leader = activeBees[0] || bee;
+  const ahead = rank > 0 ? activeBees[rank - 1] : null;
+  const meanProgress =
+    activeBees.reduce((total, candidate) => total + candidate.progress, 0) / Math.max(1, activeBees.length);
+  const behindLeader = Math.max(0, leader.progress - bee.progress);
+  const gapAhead = ahead ? Math.max(0, ahead.progress - bee.progress) : 0;
+  const openingWindow = 1 - smootherStep(clamp((state.raceElapsed - 0.85) / 0.9));
+  const openingBoost = openingWindow * bee.openingKick;
+  const phase = bee.progress;
+  const rhythm =
+    Math.sin(state.raceElapsed * (bee.pulseRate * 2.15) + bee.pathSeed) * bee.rhythmAmp +
+    Math.sin(state.raceElapsed * (bee.pulseRate * 3.5) + bee.wingSeed) * bee.rhythmAmp * 0.35;
+  const chaos =
+    Math.sin(state.raceElapsed * bee.chaosRate + bee.pathSeed * 1.6) *
+    bee.chaosAmp *
+    (0.35 + gaussian(phase, 0.48, 0.24));
+  const earlyDrive = gaussian(phase, 0.17, 0.14) * bee.earlyBias;
+  const midDrive = gaussian(phase, 0.5, 0.16) * bee.midBias;
+  const lateDrive = gaussian(phase, 0.8, 0.12) * bee.lateBias;
+  const chaseBoost = smoothstep(clamp(behindLeader / 0.13)) * bee.chaseBias;
+  const passBoost = ahead ? gaussian(gapAhead, 0.028, 0.025) * bee.passDesire : 0;
+  const draftBoost = ahead ? gaussian(gapAhead, 0.045, 0.02) * bee.draftSkill : 0;
+  const frontDrag =
+    rank === 0 ? clamp((leader.progress - meanProgress - 0.035) / 0.16) * bee.breakawayDrag : 0;
+  const fatigue = smootherStep(clamp((phase - 0.64) / 0.28)) * bee.fatigue;
 
-  bee.paceSurges.forEach((surge) => {
-    progress += gaussian(t, surge.center, surge.width) * surge.amp;
-  });
-
-  progress +=
-    Math.sin(t * Math.PI * bee.progressWave + bee.pathSeed) *
-      bee.progressAmp *
-      (1 - t) *
-      0.8 +
-    Math.sin(t * Math.PI * (bee.progressWave + 2.1) + bee.pathSeed * 0.7) *
-      bee.progressAmp *
-      0.28 *
-      (1 - t);
-
-  if (t >= 1) {
-    return 1;
+  let whistleBurst = 0;
+  if (state.whistleTriggered) {
+    const whistleBuild = smoothstep(clamp((state.raceElapsed - state.whistleTime) / 0.42));
+    const closePackBoost = 1 + smoothstep(clamp((0.14 - behindLeader) / 0.14)) * 0.24;
+    const rankBoost = rank === 0 ? 0.94 : 1 + Math.min(0.2, behindLeader * 1.6);
+    whistleBurst =
+      whistleBuild *
+      gaussian(bee.progress, bee.finishKickPoint, bee.finishKickWidth) *
+      (bee.finishKick + bee.slingBurst * 0.45) *
+      closePackBoost *
+      rankBoost;
   }
 
-  return clamp(Math.max(bee.progress, progress), 0, 0.992);
+  const speed =
+    bee.baseSpeed +
+    openingBoost +
+    earlyDrive +
+    midDrive +
+    lateDrive +
+    rhythm +
+    chaos +
+    chaseBoost +
+    passBoost +
+    draftBoost +
+    whistleBurst -
+    fatigue -
+    frontDrag;
+  return clamp(speed, 0.082, 0.198);
 }
 
 function updateLeader() {
-  const activeLeader = [...state.bees].sort((a, b) => {
-    if (b.progress !== a.progress) {
-      return b.progress - a.progress;
-    }
-    return a.finishDuration - b.finishDuration;
-  })[0];
+  const activeLeader = state.mode === "racing" ? getActiveRaceBees()[0] : state.bees[state.finishOrder[0]];
 
   if (!activeLeader) {
     return;
@@ -426,16 +618,24 @@ function updateRace(dt) {
   }
 
   state.raceElapsed += dt;
+  const activeBees = getActiveRaceBees();
+  const leader = activeBees[0];
+
+  if (leader && !state.whistleTriggered && leader.progress >= 0.74) {
+    triggerFinalWhistle(activeBees);
+  }
+  updateRaceStoryText(activeBees);
 
   state.bees.forEach((bee) => {
     if (bee.finished) {
       return;
     }
 
-    bee.progress = getPlannedProgress(bee);
-    bee.displayProgress += (bee.progress - bee.displayProgress) * Math.min(1, dt * 7.2);
+    bee.speed = getDynamicSpeed(bee, activeBees);
+    bee.progress = clamp(bee.progress + bee.speed * dt);
+    bee.displayProgress = bee.progress;
 
-    if (state.raceElapsed >= bee.finishDuration) {
+    if (bee.progress >= 1) {
       registerFinish(bee);
     }
   });
@@ -448,21 +648,23 @@ function getBeePosition(bee, metrics) {
   const progress = state.mode === "idle" ? 0 : bee.displayProgress;
   const baseX = metrics.startX + (metrics.finishX - metrics.startX) * progress;
   const motionTime = state.mode === "idle" ? state.ambientTime : state.raceElapsed;
-  const fade = 1 - progress * 0.82;
+  const swayFadeX = Math.pow(Math.max(0.02, 1 - progress), 0.55);
+  const swayFadeY = 0.24 + Math.max(0, 1 - progress * 0.78);
 
   const swayX =
-    (Math.sin(motionTime * bee.driftFreq + bee.pathSeed) * bee.driftAmpX +
-      Math.sin(progress * 15 + bee.pathSeed * 0.6) * bee.driftAmpX * 0.7) *
-    fade;
+    (Math.sin(motionTime * bee.driftFreq + bee.pathSeed) * bee.driftAmpX * 0.34 +
+      Math.sin(progress * 15 + bee.pathSeed * 0.6) * bee.driftAmpX * 0.2) *
+    swayFadeX;
   const swayY =
     Math.sin(motionTime * bee.driftFreq + bee.pathSeed * 1.1) * bee.driftAmpY * 0.52 +
     Math.sin(motionTime * bee.driftFreqSecondary + bee.pathSeed * 0.55) * bee.driftAmpY * 0.28 +
     Math.sin(progress * Math.PI * (2.3 + bee.index * 0.18) + bee.pathSeed) *
       Math.min(metrics.laneHeight * 0.16, bee.driftAmpY * 0.8) *
-      fade;
+      swayFadeY;
   const lift = state.mode === "idle" ? Math.sin(state.ambientTime * 1.8 + bee.pathSeed) * 4.5 : 0;
 
-  const x = Math.min(metrics.finishX, baseX + swayX);
+  const rawX = Math.min(metrics.finishX, baseX + Math.max(-2, swayX));
+  const x = state.mode === "racing" ? Math.max(bee.x, rawX) : rawX;
   const y = laneCenter + swayY + lift;
   const tilt =
     Math.sin(motionTime * (bee.driftFreqSecondary + 0.75) + bee.pathSeed * 0.8) * 0.15 +
@@ -700,25 +902,43 @@ function drawBeeTrail(bee, metrics) {
   }
 }
 
-function drawBee(bee, metrics) {
-  const { x, y, tilt } = getBeePosition(bee, metrics);
-  const size = bee.size;
-  const motionTime = state.mode === "idle" ? state.ambientTime : state.raceElapsed;
-  const wingFlap = Math.sin(motionTime * 26 + bee.wingSeed);
-  const wingAngle = 0.48 + wingFlap * 0.16;
-  const tagWidth = Math.max(58, Math.min(100, bee.name.length * 7.4 + 22));
+function drawBeeNameTag(bee, size, tagWidth) {
+  const tagX = -tagWidth * 0.58;
+  const tagY = -size * 1.02;
+  fillRoundRect(tagX, tagY, tagWidth, 24, 12, bee.palette.accent);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 12px 'Trebuchet MS'";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(bee.name, tagX + tagWidth / 2, tagY + 12);
+}
 
-  drawBeeTrail(bee, metrics);
+function drawWinnerStar(bee, size) {
+  if (bee.finishRank !== 1) {
+    return;
+  }
 
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tilt);
-
-  ctx.fillStyle = "rgba(45, 38, 20, 0.14)";
-  ctx.beginPath();
-  ctx.ellipse(0, size * 0.5, size * 0.48, size * 0.14, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffd95a";
+  for (let point = 0; point < 5; point += 1) {
+    const angle = -Math.PI / 2 + (point * Math.PI * 2) / 5;
+    const outerX = size * 0.74 + Math.cos(angle) * 9;
+    const outerY = -size * 0.78 + Math.sin(angle) * 9;
+    const innerAngle = angle + Math.PI / 5;
+    const innerX = size * 0.74 + Math.cos(innerAngle) * 4;
+    const innerY = -size * 0.78 + Math.sin(innerAngle) * 4;
+    if (point === 0) {
+      ctx.beginPath();
+      ctx.moveTo(outerX, outerY);
+    } else {
+      ctx.lineTo(outerX, outerY);
+    }
+    ctx.lineTo(innerX, innerY);
+  }
+  ctx.closePath();
   ctx.fill();
+}
 
+function drawFallbackBeeIllustration(bee, size, wingAngle) {
   ctx.strokeStyle = "rgba(122, 166, 214, 0.26)";
   ctx.lineWidth = 1.4;
   ctx.fillStyle = "rgba(255,255,255,0.74)";
@@ -811,36 +1031,58 @@ function drawBee(bee, metrics) {
   ctx.moveTo(size * 0.2, size * 0.2);
   ctx.lineTo(size * 0.24, size * 0.33);
   ctx.stroke();
+}
 
-  const tagX = -tagWidth * 0.58;
-  const tagY = -size * 0.92;
-  fillRoundRect(tagX, tagY, tagWidth, 24, 12, bee.palette.accent);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "800 12px 'Trebuchet MS'";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(bee.name, tagX + tagWidth / 2, tagY + 12);
+function drawSpriteBeeIllustration(bee, size, wingFlap) {
+  const spriteSize = size * 1.62;
+  const bob = wingFlap * size * 0.03;
+  const pulseX = 1 + wingFlap * 0.018;
+  const pulseY = 1 - wingFlap * 0.012;
 
-  if (bee.finishRank === 1) {
-    ctx.fillStyle = "#ffd95a";
-    for (let point = 0; point < 5; point += 1) {
-      const angle = -Math.PI / 2 + (point * Math.PI * 2) / 5;
-      const outerX = size * 0.68 + Math.cos(angle) * 9;
-      const outerY = -size * 0.7 + Math.sin(angle) * 9;
-      const innerAngle = angle + Math.PI / 5;
-      const innerX = size * 0.68 + Math.cos(innerAngle) * 4;
-      const innerY = -size * 0.7 + Math.sin(innerAngle) * 4;
-      if (point === 0) {
-        ctx.beginPath();
-        ctx.moveTo(outerX, outerY);
-      } else {
-        ctx.lineTo(outerX, outerY);
-      }
-      ctx.lineTo(innerX, innerY);
-    }
-    ctx.closePath();
-    ctx.fill();
+  ctx.fillStyle = bee.palette.glow;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.02, size * 0.03, size * 0.62, size * 0.42, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = `${bee.palette.accent}33`;
+  ctx.beginPath();
+  ctx.ellipse(size * 0.12, -size * 0.06, size * 0.18, size * 0.12, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(size * 0.03, -size * 0.08 + bob);
+  ctx.scale(-pulseX, pulseY);
+  ctx.drawImage(beeSprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+  ctx.restore();
+}
+
+function drawBee(bee, metrics) {
+  const { x, y, tilt } = getBeePosition(bee, metrics);
+  const size = bee.size;
+  const motionTime = state.mode === "idle" ? state.ambientTime : state.raceElapsed;
+  const wingFlap = Math.sin(motionTime * 26 + bee.wingSeed);
+  const wingAngle = 0.48 + wingFlap * 0.16;
+  const tagWidth = Math.max(58, Math.min(100, bee.name.length * 7.4 + 22));
+
+  drawBeeTrail(bee, metrics);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+
+  ctx.fillStyle = "rgba(45, 38, 20, 0.14)";
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.5, size * 0.52, size * 0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (beeSpriteReady) {
+    drawSpriteBeeIllustration(bee, size, wingFlap);
+  } else {
+    drawFallbackBeeIllustration(bee, size, wingAngle);
   }
+
+  drawBeeNameTag(bee, size, tagWidth);
+  drawWinnerStar(bee, size);
 
   ctx.restore();
   ctx.textAlign = "left";
@@ -891,7 +1133,7 @@ function drawPhotoFinishBanner(metrics) {
   ctx.font = "900 20px 'Trebuchet MS'";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Photo finish cực căng!", metrics.width / 2, 47);
+  ctx.fillText("Về đích sít sao", metrics.width / 2, 47);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
 }
@@ -990,13 +1232,16 @@ function renderGameToText() {
     status: countdownBox.textContent,
     leader: leaderBox.textContent,
     winner: winnerNameEl.textContent,
+    whistleTriggered: state.whistleTriggered,
     finishOrder: state.finishOrder.map((index) => state.bees[index].name),
     bees: state.bees.map((bee) => ({
       lane: bee.index + 1,
       name: bee.name,
+      role: bee.archetypeLabel,
       x: Number(bee.x.toFixed(1)),
       y: Number(bee.y.toFixed(1)),
       progress: Number(bee.displayProgress.toFixed(3)),
+      speed: Number(bee.speed.toFixed(3)),
       finished: bee.finished,
       finishRank: bee.finishRank,
     })),
