@@ -1,137 +1,579 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bee Race - Chọn Ong Về Đích</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <title>Bee Race Pro - Xếp hạng 1-4</title>
+  <style>
+    :root {
+      --bg1: #74d0ff;
+      --bg2: #dff8ff;
+      --ink: #17304f;
+      --card: rgba(255,255,255,.72);
+      --line: rgba(255,255,255,.45);
+      --pink: #ff4f8d;
+      --pink2: #ff2c72;
+      --blue: #00b4e6;
+      --blue2: #008fc7;
+      --orange: #ffb11f;
+      --orange2: #ef9100;
+      --violet: #8252ff;
+      --violet2: #6240ec;
+      --yellow: #ffd95a;
+      --green1: #8fd12e;
+      --green2: #4e8f11;
+      --shadow: 0 18px 50px rgba(23, 48, 79, .18);
+      --radius: 28px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+    body {
+      position: relative;
+    }
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: .5;
+    }
+    .glow.one {
+      width: 28vw; height: 28vw; right: 3vw; top: -6vw;
+      background: rgba(255,255,255,.9);
+    }
+    .glow.two {
+      width: 22vw; height: 22vw; left: -3vw; bottom: -8vw;
+      background: rgba(255,224,96,.6);
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 220px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 20px 28px 12px;
+    }
+    .brand {
+      background: linear-gradient(135deg, #711dd7, #9d37ff);
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 22px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: .5px;
+      box-shadow: var(--shadow);
+    }
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(30px, 3.2vw, 52px);
+      line-height: 1.02;
+      text-transform: uppercase;
+    }
+    .title-wrap p {
+      margin: 8px 0 0;
+      font-size: clamp(13px, 1.1vw, 18px);
+      opacity: .82;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn {
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.03); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn.primary { background: linear-gradient(135deg, var(--pink), var(--pink2)); color: #fff; }
+    .btn.secondary { background: linear-gradient(135deg, #ffd74a, #ffbc00); color: #3d2c00; }
+    .btn.ghost { background: rgba(255,255,255,.78); color: var(--ink); }
+
+    .app {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 310px 1fr 280px;
+      gap: 18px;
+      padding: 0 28px 24px;
+      height: calc(100vh - 112px);
+    }
+    .panel, .race-card, .rank-card {
+      background: var(--card);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,.6);
+      box-shadow: var(--shadow);
+    }
+    .panel, .rank-card { border-radius: var(--radius); padding: 22px; }
+    .panel-title, .rank-title {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+    .inputs {
+      display: grid;
+      gap: 14px;
+    }
+    .bee-input {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 18px;
+      color: #fff;
+      font-weight: 800;
+    }
+    .bee-input span { font-size: 15px; }
+    .bee-input input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 700;
+      color: var(--ink);
+      background: rgba(255,255,255,.94);
+    }
+    .c1 { background: linear-gradient(135deg, #ff6ea1, #ff3c7b); }
+    .c2 { background: linear-gradient(135deg, #20c8ea, #009ac7); }
+    .c3 { background: linear-gradient(135deg, #f7b622, #eb9300); }
+    .c4 { background: linear-gradient(135deg, #8a66ff, #6042e9); }
+    .tips {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.58);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .race-card {
+      border-radius: 34px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .race-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 6px 6px 14px;
+    }
+    .winner-box, .countdown-box {
+      background: rgba(255,255,255,.86);
+      border-radius: 18px;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      font-weight: 900;
+      font-size: clamp(18px, 1.65vw, 30px);
+      border: 2px solid rgba(255,79,141,.45);
+    }
+    .winner-box { min-width: 320px; }
+    .countdown-box { min-width: 200px; border-color: rgba(124,58,237,.35); }
+
+    .track {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #8fd8ff 0%, #9ddbff 51%, #85ca38 51%, #5a9a1b 100%);
+      border: 1px solid rgba(255,255,255,.62);
+    }
+    .sun {
+      position: absolute;
+      right: 8%; top: 7%;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: rgba(255,229,111,.96);
+      box-shadow: 0 0 0 18px rgba(255,229,111,.18);
+    }
+    .cloud, .cloud:before, .cloud:after {
+      background: rgba(255,255,255,.72);
+      position: absolute;
+      border-radius: 999px;
+      content: "";
+    }
+    .cloud.a { width: 170px; height: 56px; left: 6%; top: 9%; }
+    .cloud.a:before { width: 74px; height: 74px; left: 22px; top: -28px; }
+    .cloud.a:after  { width: 84px; height: 84px; right: 18px; top: -34px; }
+    .cloud.b { width: 188px; height: 62px; right: 19%; top: 16%; }
+    .cloud.b:before { width: 78px; height: 78px; left: 28px; top: -28px; }
+    .cloud.b:after  { width: 90px; height: 90px; right: 20px; top: -36px; }
+    .hill {
+      position: absolute;
+      bottom: 24%;
+      background: #9cca26;
+    }
+    .hill.left {
+      left: -2%; width: 34%; height: 22%; border-radius: 0 100% 0 0;
+    }
+    .hill.right {
+      right: -2%; width: 34%; height: 25%; border-radius: 100% 0 0 0;
+    }
+    .ground {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 16%;
+      background: linear-gradient(180deg, #78bf24, #46890c);
+    }
+    .finish-zone {
+      position: absolute;
+      right: 4.5%; top: 8%; bottom: 20%; width: 78px;
+    }
+    .finish-label {
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      font-size: clamp(20px, 2vw, 34px);
+      font-weight: 900; color: #fff;
+    }
+    .flag {
+      position: absolute;
+      bottom: 0;
+      width: 18px;
+      height: calc(100% - 50px);
+      background: #3b3b3b;
+      border-radius: 10px;
+    }
+    .flag:before {
+      content: "";
+      position: absolute;
+      top: 0; left: -22px;
+      width: 54px; height: 88px;
+      background-image:
+        linear-gradient(45deg, #111 25%, transparent 25%),
+        linear-gradient(-45deg, #111 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #111 75%),
+        linear-gradient(-45deg, transparent 75%, #111 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+      background-color: #fff;
+      transform: skew(-8deg);
+      border-radius: 4px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.14);
+    }
+    .flag.left { left: 6px; }
+    .flag.right { right: 6px; }
+    .flag.right:before { top: 84px; }
+
+    .lane {
+      position: absolute;
+      left: 0;
+      right: 96px;
+      height: 18.5%;
+    }
+    .lane-1 { top: 16%; }
+    .lane-2 { top: 33.5%; }
+    .lane-3 { top: 51%; }
+    .lane-4 { top: 68.5%; }
+    .lane-line {
+      position: absolute;
+      left: 5%; right: 6%; bottom: 9px;
+      height: 3px; background: var(--line);
+    }
+
+    .bee {
+      position: absolute;
+      left: 26px;
+      top: 10px;
+      width: 176px;
+      height: 72px;
+      will-change: transform;
+      z-index: 5;
+    }
+    .bee-name {
+      position: absolute;
+      left: 0; top: 15px;
+      min-width: 104px;
+      max-width: 118px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      color: #fff;
+      font-weight: 900;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(29,54,93,.18);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .bee.c1 .bee-name { background: linear-gradient(135deg, #ff6ea1, #ff3c7b); }
+    .bee.c2 .bee-name { background: linear-gradient(135deg, #20c8ea, #009ac7); }
+    .bee.c3 .bee-name { background: linear-gradient(135deg, #f7b622, #eb9300); }
+    .bee.c4 .bee-name { background: linear-gradient(135deg, #8a66ff, #6042e9); }
+    .bee-body {
+      position: absolute;
+      left: 108px; top: 8px;
+      width: 58px; height: 44px;
+    }
+    .body-core {
+      position: absolute; inset: 0;
+      border-radius: 24px;
+      background:
+        linear-gradient(90deg,
+          transparent 0 10%, #2d2620 10% 20%, #f7d342 20% 42%,
+          #2d2620 42% 52%, #f7d342 52% 74%, #2d2620 74% 84%, #f7d342 84% 100%);
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.08), 0 10px 18px rgba(0,0,0,.14);
+    }
+    .wing {
+      position: absolute;
+      width: 30px; height: 24px;
+      background: rgba(255,255,255,.78);
+      border: 2px solid rgba(113,160,210,.25);
+      border-radius: 60% 60% 50% 50%;
+      top: -12px;
+      animation: flap .18s linear infinite;
+    }
+    .wing.left { left: 8px; transform-origin: right bottom; }
+    .wing.right { right: 8px; transform-origin: left bottom; animation-delay: .09s; }
+    .eye {
+      position: absolute;
+      width: 6px; height: 6px; border-radius: 50%; background: #222; top: 16px;
+    }
+    .eye.one { left: 10px; }
+    .eye.two { left: 20px; }
+    .stinger {
+      position: absolute;
+      right: -8px; top: 16px;
+      width: 0; height: 0;
+      border-left: 10px solid #2d2620;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+    .bee.is-winner .bee-name {
+      box-shadow: 0 0 0 4px rgba(255,255,255,.65), 0 14px 28px rgba(255,79,141,.34);
+    }
+
+    .rank-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .rank-sub {
+      font-size: 14px;
+      opacity: .76;
+      margin-top: -8px;
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+    .rank-list {
+      display: grid;
+      gap: 12px;
+    }
+    .rank-item {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.58);
+      min-height: 64px;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .rank-item.done {
+      background: rgba(255,255,255,.92);
+      transform: translateY(-1px);
+    }
+    .rank-badge {
+      display: grid;
+      place-items: center;
+      height: 42px;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(0,0,0,.12);
+    }
+    .rank-1 { background: linear-gradient(135deg, #ff5f94, #ff266c); }
+    .rank-2 { background: linear-gradient(135deg, #2acff0, #0299c9); }
+    .rank-3 { background: linear-gradient(135deg, #f6bb2b, #ec9300); }
+    .rank-4 { background: linear-gradient(135deg, #8e6cff, #6240ec); }
+    .rank-name {
+      font-weight: 900;
+      font-size: 18px;
+    }
+    .rank-meta {
+      font-size: 13px;
+      opacity: .68;
+      margin-top: 2px;
+    }
+
+    .winner-modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(13,26,49,.4);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+      z-index: 10;
+    }
+    .winner-modal.show { opacity: 1; pointer-events: auto; }
+    .winner-content {
+      width: min(520px, 92vw);
+      background: rgba(255,255,255,.92);
+      border-radius: 30px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(14,32,56,.25);
+      text-align: center;
+    }
+    .winner-emoji { font-size: 54px; }
+    .winner-title { margin-top: 8px; font-size: 18px; font-weight: 700; opacity: .75; }
+    .winner-name-big { margin: 12px 0 8px; font-size: clamp(32px, 4vw, 52px); font-weight: 900; color: #ff2b70; }
+    .winner-desc { margin-bottom: 20px; opacity: .7; }
+
+    @keyframes flap {
+      0% { transform: rotate(0deg) translateY(0px); }
+      50% { transform: rotate(16deg) translateY(-2px); }
+      100% { transform: rotate(0deg) translateY(0px); }
+    }
+
+    @media (max-width: 1280px) {
+      .app { grid-template-columns: 290px 1fr; }
+      .rank-card { grid-column: 1 / -1; }
+      .rank-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 980px) {
+      html, body { overflow: auto; }
+      .topbar { grid-template-columns: 1fr; }
+      .app { grid-template-columns: 1fr; height: auto; }
+      .race-header { flex-direction: column; }
+      .winner-box, .countdown-box { min-width: 0; width: 100%; }
+      .track { min-height: 580px; }
+      .rank-list { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <div class="sky-glow glow-1"></div>
-  <div class="sky-glow glow-2"></div>
+  <div class="glow one"></div>
+  <div class="glow two"></div>
 
   <header class="topbar">
     <div class="brand">🐝 BEE RACE</div>
-    <div class="title-group">
+    <div class="title-wrap">
       <h1>Chọn ong về đích</h1>
-      <p>Nhập tên 4 chú ong, bấm bắt đầu, và đoán ong nào sẽ thắng sát nút.</p>
+      <p>Nhập tên 4 chú ong, bấm bắt đầu, và xem cả người thắng lẫn thứ tự về đích của cả 4 chú ong.</p>
     </div>
-    <div class="controls desktop-controls">
-      <button id="startBtn" class="btn btn-primary">Bắt đầu</button>
-      <button id="resetBtn" class="btn btn-secondary">Reset</button>
-      <button id="fullscreenBtn" class="btn btn-tertiary">Toàn màn hình</button>
+    <div class="controls">
+      <button id="startBtn" class="btn primary">Bắt đầu</button>
+      <button id="resetBtn" class="btn secondary">Reset</button>
+      <button id="fullscreenBtn" class="btn ghost">Toàn màn hình</button>
     </div>
   </header>
 
-  <main class="app-shell">
-    <aside class="panel setup-panel">
+  <main class="app">
+    <aside class="panel">
       <div class="panel-title">Tên các chú ong</div>
       <div class="inputs">
-        <label class="bee-input bee-1">
-          <span>Ong 1</span>
-          <input id="name1" maxlength="22" value="Nguyễn A" />
-        </label>
-        <label class="bee-input bee-2">
-          <span>Ong 2</span>
-          <input id="name2" maxlength="22" value="Trần B" />
-        </label>
-        <label class="bee-input bee-3">
-          <span>Ong 3</span>
-          <input id="name3" maxlength="22" value="Lê C" />
-        </label>
-        <label class="bee-input bee-4">
-          <span>Ong 4</span>
-          <input id="name4" maxlength="22" value="Phạm D" />
-        </label>
-      </div>
-      <div class="mobile-controls controls">
-        <button id="startBtnMobile" class="btn btn-primary">Bắt đầu</button>
-        <button id="resetBtnMobile" class="btn btn-secondary">Reset</button>
-        <button id="fullscreenBtnMobile" class="btn btn-tertiary">Toàn màn hình</button>
+        <label class="bee-input c1"><span>Ong 1</span><input id="name1" value="Nguyễn A" maxlength="22"></label>
+        <label class="bee-input c2"><span>Ong 2</span><input id="name2" value="Trần B" maxlength="22"></label>
+        <label class="bee-input c3"><span>Ong 3</span><input id="name3" value="Lê C" maxlength="22"></label>
+        <label class="bee-input c4"><span>Ong 4</span><input id="name4" value="Phạm D" maxlength="22"></label>
       </div>
       <div class="tips">
-        <div>• Random 1 ong thắng</div>
-        <div>• Tất cả ong đều về đích</div>
-        <div>• Kết quả thắng sít sao để tăng kịch tính</div>
+        • Random 1 ong thắng<br>
+        • Tất cả ong đều về đích<br>
+        • Hiển thị đầy đủ hạng #1 #2 #3 #4<br>
+        • Người thắng chỉ hơn rất sít để tăng kịch tính
       </div>
     </aside>
 
     <section class="race-card">
       <div class="race-header">
-        <div class="winner-box" id="winnerBox">Winner: ?</div>
-        <div class="countdown" id="countdownBox">Sẵn sàng?</div>
+        <div id="winnerBox" class="winner-box">Winner: ?</div>
+        <div id="countdownBox" class="countdown-box">Sẵn sàng?</div>
       </div>
 
-      <div id="raceTrack" class="race-track">
-        <div class="track-sun"></div>
-        <div class="cloud cloud-a"></div>
-        <div class="cloud cloud-b"></div>
-        <div class="hills hill-left"></div>
-        <div class="hills hill-right"></div>
+      <div id="track" class="track">
+        <div class="sun"></div>
+        <div class="cloud a"></div>
+        <div class="cloud b"></div>
+        <div class="hill left"></div>
+        <div class="hill right"></div>
+
         <div class="finish-zone">
           <div class="finish-label">ĐÍCH</div>
-          <div class="flag flag-left"></div>
-          <div class="flag flag-right"></div>
+          <div class="flag left"></div>
+          <div class="flag right"></div>
         </div>
 
-        <div class="lane lane-1" data-index="0">
+        <div class="lane lane-1">
           <div class="lane-line"></div>
-          <div class="bee bee-1" id="bee0">
+          <div class="bee c1" id="bee0">
             <div class="bee-name" id="label0">Nguyễn A</div>
             <div class="bee-body">
-              <div class="wing wing-left"></div>
-              <div class="wing wing-right"></div>
+              <div class="wing left"></div>
+              <div class="wing right"></div>
               <div class="body-core"></div>
-              <div class="eye eye-1"></div>
-              <div class="eye eye-2"></div>
+              <div class="eye one"></div>
+              <div class="eye two"></div>
               <div class="stinger"></div>
             </div>
           </div>
         </div>
 
-        <div class="lane lane-2" data-index="1">
+        <div class="lane lane-2">
           <div class="lane-line"></div>
-          <div class="bee bee-2" id="bee1">
+          <div class="bee c2" id="bee1">
             <div class="bee-name" id="label1">Trần B</div>
             <div class="bee-body">
-              <div class="wing wing-left"></div>
-              <div class="wing wing-right"></div>
+              <div class="wing left"></div>
+              <div class="wing right"></div>
               <div class="body-core"></div>
-              <div class="eye eye-1"></div>
-              <div class="eye eye-2"></div>
+              <div class="eye one"></div>
+              <div class="eye two"></div>
               <div class="stinger"></div>
             </div>
           </div>
         </div>
 
-        <div class="lane lane-3" data-index="2">
+        <div class="lane lane-3">
           <div class="lane-line"></div>
-          <div class="bee bee-3" id="bee2">
+          <div class="bee c3" id="bee2">
             <div class="bee-name" id="label2">Lê C</div>
             <div class="bee-body">
-              <div class="wing wing-left"></div>
-              <div class="wing wing-right"></div>
+              <div class="wing left"></div>
+              <div class="wing right"></div>
               <div class="body-core"></div>
-              <div class="eye eye-1"></div>
-              <div class="eye eye-2"></div>
+              <div class="eye one"></div>
+              <div class="eye two"></div>
               <div class="stinger"></div>
             </div>
           </div>
         </div>
 
-        <div class="lane lane-4" data-index="3">
+        <div class="lane lane-4">
           <div class="lane-line"></div>
-          <div class="bee bee-4" id="bee3">
+          <div class="bee c4" id="bee3">
             <div class="bee-name" id="label3">Phạm D</div>
             <div class="bee-body">
-              <div class="wing wing-left"></div>
-              <div class="wing wing-right"></div>
+              <div class="wing left"></div>
+              <div class="wing right"></div>
               <div class="body-core"></div>
-              <div class="eye eye-1"></div>
-              <div class="eye eye-2"></div>
+              <div class="eye one"></div>
+              <div class="eye two"></div>
               <div class="stinger"></div>
             </div>
           </div>
@@ -140,17 +582,262 @@
         <div class="ground"></div>
       </div>
     </section>
+
+    <aside class="rank-card">
+      <div class="rank-title">Bảng xếp hạng</div>
+      <div class="rank-sub">Khi đua xong sẽ hiện đầy đủ hạng 1 đến 4.</div>
+      <div class="rank-list" id="rankList">
+        <div class="rank-item"><div class="rank-badge rank-1">#1</div><div><div class="rank-name">---</div><div class="rank-meta">Chưa có kết quả</div></div></div>
+        <div class="rank-item"><div class="rank-badge rank-2">#2</div><div><div class="rank-name">---</div><div class="rank-meta">Chưa có kết quả</div></div></div>
+        <div class="rank-item"><div class="rank-badge rank-3">#3</div><div><div class="rank-name">---</div><div class="rank-meta">Chưa có kết quả</div></div></div>
+        <div class="rank-item"><div class="rank-badge rank-4">#4</div><div><div class="rank-name">---</div><div class="rank-meta">Chưa có kết quả</div></div></div>
+      </div>
+    </aside>
   </main>
 
-  <div class="winner-modal" id="winnerModal" aria-hidden="true">
+  <div class="winner-modal" id="winnerModal">
     <div class="winner-content">
       <div class="winner-emoji">🏁🐝</div>
       <div class="winner-title">Người chiến thắng</div>
-      <div class="winner-name" id="winnerModalName">?</div>
-      <button id="closeWinnerBtn" class="btn btn-primary">Chơi lại</button>
+      <div class="winner-name-big" id="winnerModalName">?</div>
+      <div class="winner-desc">Bảng xếp hạng bên phải sẽ hiển thị đủ 4 vị trí.</div>
+      <button id="closeWinnerBtn" class="btn primary">Chơi lại</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const bees = Array.from({ length: 4 }, (_, i) => ({
+      el: document.getElementById(`bee${i}`),
+      labelEl: document.getElementById(`label${i}`),
+      inputEl: document.getElementById(`name${i + 1}`),
+      x: 0,
+      y: 0,
+      vx: 0,
+      phase: Math.random() * Math.PI * 2,
+      target: 0,
+      maxSpeed: 0,
+      finishTs: null,
+      finished: false
+    }));
+
+    const track = document.getElementById('track');
+    const winnerBox = document.getElementById('winnerBox');
+    const countdownBox = document.getElementById('countdownBox');
+    const rankList = document.getElementById('rankList');
+    const winnerModal = document.getElementById('winnerModal');
+    const winnerModalName = document.getElementById('winnerModalName');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const closeWinnerBtn = document.getElementById('closeWinnerBtn');
+
+    let animId = null;
+    let countdownTimer = null;
+    let startClock = 0;
+    let raceRunning = false;
+    let winnerIndex = 0;
+    let finishOrder = [];
+
+    function syncNames() {
+      bees.forEach((bee, i) => {
+        const value = (bee.inputEl.value || `Ong ${i + 1}`).trim();
+        bee.labelEl.textContent = value;
+      });
+    }
+
+    function renderRanking(order = []) {
+      const html = [0,1,2,3].map((slot) => {
+        const beeIndex = order[slot];
+        const hasData = beeIndex !== undefined;
+        const name = hasData ? bees[beeIndex].labelEl.textContent : '---';
+        const meta = hasData
+          ? (slot === 0 ? 'Về đích đầu tiên' : `Vị trí thứ ${slot + 1}`)
+          : 'Chưa có kết quả';
+        return `
+          <div class="rank-item ${hasData ? 'done' : ''}">
+            <div class="rank-badge rank-${slot + 1}">#${slot + 1}</div>
+            <div>
+              <div class="rank-name">${name}</div>
+              <div class="rank-meta">${meta}</div>
+            </div>
+          </div>`;
+      }).join('');
+      rankList.innerHTML = html;
+    }
+
+    function randomWinner() {
+      return Math.floor(Math.random() * bees.length);
+    }
+
+    function resetPositions() {
+      bees.forEach((bee, idx) => {
+        bee.x = 0;
+        bee.y = 0;
+        bee.vx = 0;
+        bee.finishTs = null;
+        bee.finished = false;
+        bee.phase = Math.random() * Math.PI * 2;
+        bee.el.style.transform = 'translateX(0px) translateY(0px) rotate(0deg)';
+        bee.el.classList.remove('is-winner');
+        bee.labelEl.textContent = (bee.inputEl.value || `Ong ${idx + 1}`).trim();
+      });
+    }
+
+    function prepRaceState() {
+      const trackWidth = track.clientWidth;
+      const finishPadding = Math.max(120, trackWidth * 0.1);
+      const finishLine = trackWidth - finishPadding;
+      const closeGap = Math.min(34, Math.max(14, trackWidth * 0.018));
+      winnerIndex = randomWinner();
+      finishOrder = [];
+
+      const runnerUpIndex = (winnerIndex + 1 + Math.floor(Math.random() * 3)) % 4;
+
+      bees.forEach((bee, idx) => {
+        const isWinner = idx === winnerIndex;
+        const isRunnerUp = idx === runnerUpIndex;
+        let nudge = 0;
+        if (isWinner) nudge = 0;
+        else if (isRunnerUp) nudge = closeGap;
+        else nudge = closeGap + 18 + Math.random() * 18;
+
+        bee.target = Math.max(0, finishLine - nudge);
+        const baseSpeed = 255 + Math.random() * 18;
+        bee.maxSpeed = isWinner
+          ? baseSpeed + 38 + Math.random() * 12
+          : isRunnerUp
+            ? baseSpeed + 24 + Math.random() * 10
+            : baseSpeed + Math.random() * 8;
+      });
+    }
+
+    function finishRace() {
+      raceRunning = false;
+      cancelAnimationFrame(animId);
+      animId = null;
+      const winnerName = bees[winnerIndex].labelEl.textContent;
+      winnerBox.textContent = `Winner: ${winnerName}`;
+      winnerModalName.textContent = winnerName;
+      bees[winnerIndex].el.classList.add('is-winner');
+      countdownBox.textContent = 'Về đích rồi!';
+      renderRanking(finishOrder);
+      startBtn.disabled = false;
+      setTimeout(() => winnerModal.classList.add('show'), 420);
+    }
+
+    function animate(ts) {
+      if (!startClock) startClock = ts;
+      const dt = Math.min(0.033, (ts - startClock) / 1000 || 0.016);
+      startClock = ts;
+
+      let completed = 0;
+      bees.forEach((bee, idx) => {
+        const distanceLeft = bee.target - bee.x;
+        const progress = bee.target === 0 ? 1 : Math.min(1, bee.x / bee.target);
+
+        if (distanceLeft <= 0.5) {
+          bee.x = bee.target;
+          if (!bee.finished) {
+            bee.finished = true;
+            bee.finishTs = performance.now();
+            finishOrder.push(idx);
+            renderRanking(finishOrder);
+          }
+          completed += 1;
+        } else {
+          const catchUp = 0.92 + (1 - progress) * 0.42;
+          const dramaBoost = idx === winnerIndex && progress > 0.72 ? 1.18 : 1;
+          const subtleBrake = idx !== winnerIndex && progress > 0.8 ? 0.92 : 1;
+          bee.vx += (bee.maxSpeed * catchUp * dramaBoost * subtleBrake - bee.vx) * 2.8 * dt;
+          const step = Math.min(distanceLeft, bee.vx * dt);
+          bee.x += step;
+        }
+
+        bee.phase += 8 * dt;
+        const bob = Math.sin(bee.phase + idx) * 7 + Math.sin(bee.phase * 0.52 + idx) * 3;
+        const tilt = Math.sin(bee.phase * 1.8) * 2;
+        bee.y = bob;
+        bee.el.style.transform = `translateX(${bee.x}px) translateY(${bee.y}px) rotate(${tilt}deg)`;
+      });
+
+      if (completed === bees.length) {
+        finishRace();
+        return;
+      }
+      animId = requestAnimationFrame(animate);
+    }
+
+    function startRace() {
+      if (raceRunning) return;
+      syncNames();
+      winnerModal.classList.remove('show');
+      winnerBox.textContent = 'Winner: ?';
+      countdownBox.textContent = 'Chuẩn bị...';
+      startBtn.disabled = true;
+      clearInterval(countdownTimer);
+      resetPositions();
+      renderRanking([]);
+      prepRaceState();
+
+      let count = 3;
+      countdownBox.textContent = `Bắt đầu sau ${count}`;
+      countdownTimer = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          countdownBox.textContent = `Bắt đầu sau ${count}`;
+        } else {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          countdownBox.textContent = 'Đua nào!';
+          raceRunning = true;
+          startClock = 0;
+          animId = requestAnimationFrame(animate);
+        }
+      }, 650);
+    }
+
+    function resetRace() {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      cancelAnimationFrame(animId);
+      animId = null;
+      raceRunning = false;
+      syncNames();
+      resetPositions();
+      finishOrder = [];
+      winnerBox.textContent = 'Winner: ?';
+      countdownBox.textContent = 'Sẵn sàng?';
+      renderRanking([]);
+      winnerModal.classList.remove('show');
+      startBtn.disabled = false;
+    }
+
+    async function openFullscreen() {
+      const root = document.documentElement;
+      if (!document.fullscreenElement && root.requestFullscreen) {
+        await root.requestFullscreen();
+      }
+    }
+
+    bees.forEach(bee => bee.inputEl.addEventListener('input', syncNames));
+    startBtn.addEventListener('click', startRace);
+    resetBtn.addEventListener('click', resetRace);
+    fullscreenBtn.addEventListener('click', openFullscreen);
+    closeWinnerBtn.addEventListener('click', () => {
+      winnerModal.classList.remove('show');
+      resetRace();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startRace();
+      if (e.key.toLowerCase() === 'r') resetRace();
+      if (e.key.toLowerCase() === 'f') openFullscreen();
+    });
+    window.addEventListener('resize', () => { if (!raceRunning) resetRace(); });
+
+    syncNames();
+    renderRanking([]);
+    resetRace();
+  </script>
 </body>
 </html>
